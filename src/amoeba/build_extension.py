@@ -88,9 +88,9 @@ class BuildExtension(build_ext):
         if shutil.which("cmake") is None:
             raise RuntimeError("Required command 'cmake' not found")
 
-        # Check that Ninja is installed
-        if shutil.which("ninja") is None:
-            raise RuntimeError("Required command 'ninja' not found")
+        # # Check that Ninja is installed
+        # if shutil.which("ninja") is None:
+        #     raise RuntimeError("Required command 'ninja' not found")
 
         for ext in cmake_extensions:
 
