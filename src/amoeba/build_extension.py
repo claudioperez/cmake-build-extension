@@ -148,18 +148,22 @@ class BuildExtension(build_ext):
 
         # CMake configure arguments
         configure_args = [
-            "-GNinja",
+            #"-GNinja",
             f"-DCMAKE_BUILD_TYPE={ext.cmake_build_type}",
             f"-DCMAKE_INSTALL_PREFIX:PATH={cmake_install_prefix}",
             # Fix #26: https://github.com/diegoferigo/cmake-build-extension/issues/26
-            f"-DCMAKE_MAKE_PROGRAM={shutil.which('ninja')}",
+            #f"-DCMAKE_MAKE_PROGRAM={shutil.which('ninja')}",
         ]
 
         # Extend the configure arguments with those passed from the extension
         configure_args += ext.cmake_configure_options
 
         # CMake build arguments
-        build_args = ["--config", ext.cmake_build_type]
+        build_args = [
+                "--config", ext.cmake_build_type
+        ]
+        if self.parallel:
+            build_args.append(f"-j{self.parallel}")
 
         if platform.system() == "Windows":
 
