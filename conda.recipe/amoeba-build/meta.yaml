@@ -1,0 +1,34 @@
+{% set name = "amoeba-build" %}
+{% set version = "0.0.3" %}
+
+package:
+  name: "{{ name|lower }}"
+  version: "{{ version }}"
+
+source:
+  url: "https://pypi.io/packages/source/{{ name[0] }}/{{ name }}/{{ name }}-{{ version }}.tar.gz"
+  sha256: 8c2fb49d2b5372fea881724ec7f6ec1476f2c8624e52f5485889e7498bcde84f
+
+build:
+  number: 0
+  script: "{{ PYTHON }} -m pip install . -vv"
+
+requirements:
+  host:
+    - pip
+    - python
+  run:
+    - python
+
+about:
+  home: The package home page
+  license: MIT
+  license_family: MIT
+  license_file: 
+  summary: "Setuptools extension to build and package CMake projects."
+  doc_url: 
+  dev_url: 
+
+extra:
+  recipe-maintainers:
+    - your-github-id-here
