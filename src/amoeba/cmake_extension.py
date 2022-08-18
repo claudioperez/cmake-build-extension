@@ -16,6 +16,7 @@ class CMakeExtension(Extension):
         write_top_level_init: Create a new top-level ``__init__.py`` file in the install
             prefix and write content.
         cmake_configure_options: List of additional CMake configure options (-DBAR=FOO).
+        cmake_build_options: List of additional build-time arguments.
         source_dir: The location of the main CMakeLists.txt.
         cmake_build_type: The default build type of the CMake project.
         cmake_component: The name of component to install. Defaults to all components.
@@ -30,6 +31,8 @@ class CMakeExtension(Extension):
         disable_editable: bool = False,
         write_top_level_init: str = None,
         cmake_configure_options: List[str] = (),
+        cmake_install_options: List[str] = (),
+        cmake_build_options: List[str] = (),
         source_dir: str = str(Path(".").absolute()),
         cmake_build_type: str = "Release",
         cmake_component: str = None,
@@ -52,5 +55,7 @@ class CMakeExtension(Extension):
         self.cmake_depends_on = cmake_depends_on
         self.source_dir = str(Path(source_dir).absolute())
         self.cmake_configure_options = cmake_configure_options
+        self.cmake_build_options = cmake_build_options
+        self.cmake_install_options = cmake_install_options
         self.cmake_component = cmake_component
         self.expose_binaries = expose_binaries
