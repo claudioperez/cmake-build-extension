@@ -4,7 +4,8 @@ from pathlib import Path
 
 from . import build_ext_option, sdist_command
 from .build_extension import BuildExtension
-from .cmake_extension import CMakeExtension
+from .extension import CMakeExtension
+from .commands  import CMakeCommand
 from .sdist_command import GitSdistFolder, GitSdistTree
 
 

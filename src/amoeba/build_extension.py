@@ -11,7 +11,7 @@ import time
 from setuptools.command.build_ext import build_ext
 
 from .build_ext_option import BuildExtOption, add_new_build_ext_option
-from .cmake_extension import CMakeExtension
+from .extension import CMakeExtension
 
 # These options are listed in `python setup.py build_ext -h`
 custom_options = [
@@ -115,18 +115,7 @@ class BuildExtension(build_ext):
 
             self.build_extension(ext)
 
-    def build_extension(self, ext: CMakeExtension) -> None:
-        """
-        Build a CMakeExtension object.
-
-        Args:
-            ext: The CMakeExtension object to build.
-        """
-
-        if self.inplace and ext.disable_editable:
-            print(f"Editable install recognized. Extension '{ext.name}' disabled.")
-            return
-
+    def configure_extension(self, ext: CMakeExtension):
         # Export CMAKE_PREFIX_PATH of all the dependencies
         for pkg in ext.cmake_depends_on:
 
@@ -151,11 +140,10 @@ class BuildExtension(build_ext):
 
         # CMake configure arguments
         configure_args = [
-            #"-GNinja",
             f"-DCMAKE_BUILD_TYPE={ext.cmake_build_type}",
             f"-DCMAKE_INSTALL_PREFIX:PATH={cmake_install_prefix}",
             # Fix #26: https://github.com/diegoferigo/cmake-build-extension/issues/26
-            #f"-DCMAKE_MAKE_PROGRAM={shutil.which('ninja')}",
+            # f"-DCMAKE_MAKE_PROGRAM={shutil.which('ninja')}",
         ]
 
         # Extend the configure arguments with those passed from the extension
@@ -201,7 +189,7 @@ class BuildExtension(build_ext):
 
 
         # 1. Compose CMake configure command
-        configure_command = [
+        ext.configure_command = configure_command = [
             "cmake",
             "-S",
             ext.source_dir,
@@ -210,10 +198,14 @@ class BuildExtension(build_ext):
         ] + configure_args
 
         # 2. Compose CMake build command
-        build_command = ["cmake", "--build", build_folder] + build_args
+        ext.build_command = build_command = ["cmake", "--build", build_folder] + build_args
 
         # 3. Compose CMake install command
+
         install_command = ["cmake", "--install", build_folder] + ext.cmake_install_options
+
+        # ext.install_command = install_command = ["cmake", "--install", build_folder]
+
 
         # If the cmake_component option of the CMakeExtension is used, install just
         # the specified component.
@@ -226,18 +218,33 @@ class BuildExtension(build_ext):
         if self.component is not None:
             install_command.extend(["--component", self.component])
 
+    def build_extension(self, ext: CMakeExtension) -> None:
+        """
+        Build a CMakeExtension object.
+
+        Args:
+            ext: The CMakeExtension object to build.
+        """
+
+        if self.inplace and ext.disable_editable:
+            print(f"Editable install recognized. Extension '{ext.name}' disabled.")
+            return
+
+        self.configure_extension(ext)
+
         print("")
         print("==> Configuring:")
-        print(f"$ {' '.join(configure_command)}")
+        print(f"$ {' '.join(ext.configure_command)}")
         print("")
         print("==> Building:")
-        print(f"$ {' '.join(build_command)}")
+        print(f"$ {' '.join(ext.build_command)}")
         print("")
         print("==> Installing:")
-        print(f"$ {' '.join(install_command)}")
+        print(f"$ {' '.join(ext.install_command)}")
         print("")
 
         # Call CMake
+
         subprocess.check_call(configure_command)
         subprocess.check_call(build_command)
         try:
@@ -245,6 +252,11 @@ class BuildExtension(build_ext):
         except Exception as e:
             import sys
             print("WARNING: " , e, file=sys.stderr)
+
+        # subprocess.check_call(ext.configure_command)
+        # subprocess.check_call(ext.build_command)
+        # subprocess.check_call(ext.install_command)
+
 
         # Write content to the top-level __init__.py
         if ext.write_top_level_init is not None:
@@ -315,3 +327,4 @@ class BuildExtension(build_ext):
             ] = f"{str(path)}:{os.environ['CMAKE_PREFIX_PATH']}"
         else:
             os.environ["CMAKE_PREFIX_PATH"] = str(path)
+
