@@ -202,9 +202,7 @@ class BuildExtension(build_ext):
 
         # 3. Compose CMake install command
 
-        ext.install_command = ["cmake", "--install", build_folder] + ext.cmake_install_options
-
-        # ext.install_command = install_command = ["cmake", "--install", build_folder]
+        ext.install_command = install_command = ["cmake", "--install", build_folder] + ext.cmake_install_options
 
 
         # If the cmake_component option of the CMakeExtension is used, install just
@@ -245,18 +243,13 @@ class BuildExtension(build_ext):
 
         # Call CMake
 
-        subprocess.check_call(configure_command)
-        subprocess.check_call(build_command)
+        subprocess.check_call(ext.configure_command)
+        subprocess.check_call(ext.build_command)
         try:
-            subprocess.check_call(install_command)
+            subprocess.check_call(ext.install_command)
         except Exception as e:
             import sys
             print("WARNING: " , e, file=sys.stderr)
-
-        # subprocess.check_call(ext.configure_command)
-        # subprocess.check_call(ext.build_command)
-        # subprocess.check_call(ext.install_command)
-
 
         # Write content to the top-level __init__.py
         if ext.write_top_level_init is not None:
