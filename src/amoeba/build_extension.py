@@ -5,6 +5,9 @@ import shutil
 import subprocess
 from pathlib import Path
 
+import time
+
+
 from setuptools.command.build_ext import build_ext
 
 from .build_ext_option import BuildExtOption, add_new_build_ext_option
@@ -161,7 +164,7 @@ class BuildExtension(build_ext):
         # CMake build arguments
         build_args = [
                 "--config", ext.cmake_build_type
-        ]
+        ] + ext.cmake_build_options
         if self.parallel:
             build_args.append(f"-j{self.parallel}")
 
@@ -189,8 +192,13 @@ class BuildExtension(build_ext):
         # Get the absolute path to the build folder
         build_folder = str(Path(".").absolute() / f"{self.build_temp}_{ext.name}")
 
-        # Make sure that the build folder exists
-        Path(build_folder).mkdir(exist_ok=True, parents=True)
+        # Make sure that the build folder exists and we have permission to access it
+        try:
+            Path(build_folder).mkdir(exist_ok=True, parents=True)
+        except:
+            build_folder += f'_{time.strftime("%Y%m%d-%H%M%S")}'
+            Path(build_folder).mkdir(exist_ok=True, parents=True)
+
 
         # 1. Compose CMake configure command
         configure_command = [
@@ -205,7 +213,7 @@ class BuildExtension(build_ext):
         build_command = ["cmake", "--build", build_folder] + build_args
 
         # 3. Compose CMake install command
-        install_command = ["cmake", "--install", build_folder]
+        install_command = ["cmake", "--install", build_folder] + ext.cmake_install_options
 
         # If the cmake_component option of the CMakeExtension is used, install just
         # the specified component.
@@ -232,7 +240,11 @@ class BuildExtension(build_ext):
         # Call CMake
         subprocess.check_call(configure_command)
         subprocess.check_call(build_command)
-        subprocess.check_call(install_command)
+        try:
+            subprocess.check_call(install_command)
+        except Exception as e:
+            import sys
+            print("WARNING: " , e, file=sys.stderr)
 
         # Write content to the top-level __init__.py
         if ext.write_top_level_init is not None:
