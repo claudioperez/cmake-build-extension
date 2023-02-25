@@ -202,7 +202,7 @@ class BuildExtension(build_ext):
 
         # 3. Compose CMake install command
 
-        install_command = ["cmake", "--install", build_folder] + ext.cmake_install_options
+        ext.install_command = ["cmake", "--install", build_folder] + ext.cmake_install_options
 
         # ext.install_command = install_command = ["cmake", "--install", build_folder]
 
@@ -210,13 +210,13 @@ class BuildExtension(build_ext):
         # If the cmake_component option of the CMakeExtension is used, install just
         # the specified component.
         if self.component is None and ext.cmake_component is not None:
-            install_command.extend(["--component", ext.cmake_component])
+            ext.install_command.extend(["--component", ext.cmake_component])
 
         # Instead, if the `--component` command line option is used, install just
         # the specified component. This has higher priority than what specified in
         # the CMakeExtension.
         if self.component is not None:
-            install_command.extend(["--component", self.component])
+            ext.install_command.extend(["--component", self.component])
 
     def build_extension(self, ext: CMakeExtension) -> None:
         """
