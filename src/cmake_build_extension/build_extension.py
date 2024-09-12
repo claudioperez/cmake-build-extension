@@ -88,11 +88,12 @@ class BuildExtension(build_ext):
         if shutil.which("cmake") is None:
             raise RuntimeError("Required command 'cmake' not found")
 
-        # Check that Ninja is installed
-        if shutil.which("ninja") is None:
-            raise RuntimeError("Required command 'ninja' not found")
-
         for ext in cmake_extensions:
+            # Check that Ninja is installed
+            if (ext.cmake_generator and 
+                ext.cmake_generator.lower() == "ninja" and 
+                shutil.which("ninja") is None):
+                raise RuntimeError("Required command 'ninja' not found")
 
             # Disable the extension if specified in the command line
             if (
@@ -146,13 +147,21 @@ class BuildExtension(build_ext):
         ext_dir = Path(self.get_ext_fullpath(ext.name)).parent.absolute()
         cmake_install_prefix = ext_dir / ext.install_prefix
 
+        # Initialize the CMake configuration arguments
+        configure_args = []
+
+        # Select the appropriate generator and accompanying settings
+        if ext.cmake_generator is not None:
+            configure_args += ["-G", ext.cmake_generator]
+
+            if ext.cmake_generator == "Ninja":
+                # Fix #26: https://github.com/diegoferigo/cmake-build-extension/issues/26
+                configure_args += [f"-DCMAKE_MAKE_PROGRAM={shutil.which('ninja')}"]
+
         # CMake configure arguments
-        configure_args = [
-            "-GNinja",
+        configure_args += [
             f"-DCMAKE_BUILD_TYPE={ext.cmake_build_type}",
             f"-DCMAKE_INSTALL_PREFIX:PATH={cmake_install_prefix}",
-            # Fix #26: https://github.com/diegoferigo/cmake-build-extension/issues/26
-            f"-DCMAKE_MAKE_PROGRAM={shutil.which('ninja')}",
         ]
 
         # Extend the configure arguments with those passed from the extension
@@ -161,11 +170,14 @@ class BuildExtension(build_ext):
         # CMake build arguments
         build_args = ["--config", ext.cmake_build_type]
 
+        # CMake install arguments
+        install_args = ["--config", ext.cmake_build_type]
+
         if platform.system() == "Windows":
 
             configure_args += []
 
-        elif platform.system() in {"Linux", "Darwin"}:
+        elif platform.system() in {"Linux", "Darwin", "GNU"}:
 
             configure_args += []
 
@@ -201,7 +213,7 @@ class BuildExtension(build_ext):
         build_command = ["cmake", "--build", build_folder] + build_args
 
         # 3. Compose CMake install command
-        install_command = ["cmake", "--install", build_folder]
+        install_command = ["cmake", "--install", build_folder] + install_args
 
         # If the cmake_component option of the CMakeExtension is used, install just
         # the specified component.
